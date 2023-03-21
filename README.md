@@ -8,21 +8,23 @@ The soccer booking platform is a web application that allows users to set up soc
 
 ## Data Model
 
-The following documents will be stored in the database:
+* The following documents will be stored in the database:
 
-User: Stores information about registered users, including their name, email, password, and team affiliation.
-Team: Stores information about each team, including the team name, captain, and players.
-Pitch: Stores information about available pitches, including the location, availability, and price.
-Match: Stores information about scheduled matches, including the teams, pitch, date, and time.
-League: Stores information about ongoing leagues, including the teams, schedule, and standings.
+  * User: Stores information about registered users, including their name, email, password, and team affiliation.
+  * Team: Stores information about each team, including the team name, captain, and players.
+  * Pitch: Stores information about available pitches, including the location, availability, and price.
+  * Match: Stores information about scheduled matches, including the teams, pitch, date, and time.
+  * League: Stores information about ongoing leagues, including the teams, schedule, and standings.
 
 Example User:
+'''javascript
 {
   name: "John Doe",
   email: "john.doe@example.com",
   password: "hashed_password", // a password hash
   team: "605c72ef4a16294268910e4c" // ObjectId of a Team document
 }
+'''
 
 Example Team:
 {
