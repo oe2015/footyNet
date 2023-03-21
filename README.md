@@ -90,11 +90,9 @@ Example League:
 
 ## Wireframes
 
-(__TODO__: wireframes for all of the pages on your site; they can be as simple as photos of drawings or you can use a tool like Balsamiq, Omnigraffle, etc.)
+/home - user chooses to book a pitch, join league, register etc..
 
-/list/create - page for creating a new shopping list
-
-![list create](documentation/list-create.png)
+![list create](documentation/home.png)
 
 /list - page for showing all shopping lists
 
