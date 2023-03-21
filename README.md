@@ -94,13 +94,19 @@ Example League:
 
 ![list create](documentation/home.png)
 
-/list - page for showing all shopping lists
+/register - allows user to register a new profile
 
-![list](documentation/list.png)
+![list](documentation/profile.png)
 
-/list/slug - page for showing specific shopping list
+/leagues - page to show league standings
 
-![list](documentation/list-slug.png)
+![list](documentation/league.png)
+
+/pitches - page to show available pitches for user to book
+
+![list](documentation/pitch.png)
+
+
 
 ## Site map
 
