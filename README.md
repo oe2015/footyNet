@@ -1,26 +1,20 @@
 The content below is an example project proposal / requirements document. Replace the text below the lines marked "__TODO__" with details specific to your project. Remove the "TODO" lines.
 
-(__TODO__: your project name)
-
-# Shoppy Shoperson 
+# FootyNet
 
 ## Overview
 
-(__TODO__: a brief one or two paragraph, high-level description of your project)
-
-Remembering what to buy at the grocery store is waaaaay too difficult. Also, shopping for groceries when you're hungry leads to regrettable purchases. Sooo... that's where Shoppy Shoperson comes in!
-
-Shoppy Shoperson is a web app that will allow users to keep track of multiple grocery lists. Users can register and login. Once they're logged in, they can create or view their grocery list. For every list that they have, they can add items to the list or cross off items.
-
+The soccer booking platform is a web application that allows users to set up soccer games, tournaments, and leagues between teams, find available pitches in their area, and connect with other players. Users can join teams that need extra players, create their own teams, and schedule matches with other teams. The application will be built using Express and MongoDB and will include several forms, mongoose schemas, and routes.
 
 ## Data Model
 
-(__TODO__: a description of your application's data and their relationships to each other) 
+The following documents will be stored in the database:
 
-The application will store Users, Lists and Items
-
-* users can have multiple lists (via references)
-* each list can have multiple items (by embedding)
+User: Stores information about registered users, including their name, email, password, and team affiliation.
+Team: Stores information about each team, including the team name, captain, and players.
+Pitch: Stores information about available pitches, including the location, availability, and price.
+Match: Stores information about scheduled matches, including the teams, pitch, date, and time.
+League: Stores information about ongoing leagues, including the teams, schedule, and standings.
 
 (__TODO__: sample documents)
 
@@ -47,7 +41,6 @@ An Example List with Embedded Items:
   createdAt: // timestamp
 }
 ```
-
 
 ## [Link to Commented First Draft Schema](db.mjs) 
 
