@@ -17,16 +17,17 @@ The soccer booking platform is a web application that allows users to set up soc
   * League: Stores information about ongoing leagues, including the teams, schedule, and standings.
 
 Example User:
-'''javascript
+```javascript
 {
   name: "John Doe",
   email: "john.doe@example.com",
   password: "hashed_password", // a password hash
   team: "605c72ef4a16294268910e4c" // ObjectId of a Team document
 }
-'''
+```
 
 Example Team:
+```javascript
 {
   name: "Soccer Stars",
   captain: "605c72ef4a16294268910e4b", // ObjectId of a User document
@@ -38,13 +39,17 @@ Example Team:
     "605c72ef4a16294268910e4d", // ObjectId of a Match document
   ]
 }
+```
 Example Pitch:
+```javascript
 {
   location: "Green Park Soccer Field",
   availability: ["2023-04-15T10:00:00.000Z", "2023-04-16T14:00:00.000Z"],
   price: 50
 }
+```
 Example Match:
+```javascript
 {
   teams: [
     "605c72ef4a16294268910e4e", // ObjectId of a Team document
@@ -54,7 +59,10 @@ Example Match:
   date: "2023-04-15T10:00:00.000Z",
   time: "10:00"
 }
+```
+
 Example League:
+```javascript
 {
   name: "Spring Soccer League",
   teams: [
@@ -76,6 +84,7 @@ Example League:
     },
   ]
 }
+```
 
 ## [Link to Commented First Draft Schema](db.mjs) 
 
