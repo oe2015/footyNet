@@ -1,11 +1,20 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
+
+console.log('Waiting for connection to database...')
+try {
+  await mongoose.connect('mongodb://localhost/footyNet', {useNewUrlParser: true});
+  console.log('Successfully connected to database.')
+} catch (err) {
+  console.log('ERROR: ', err);
+}
+
 const User = new mongoose.Schema({
-    name: String,
+    username: String,
     email: { type: String, unique: true },
     password: String,
-    team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+    // team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
   });
 
 const Team = new mongoose.Schema({
@@ -37,6 +46,9 @@ const League = new mongoose.Schema({
       points: Number,
     }],
 });
-  
-  
-  
+
+mongoose.model('User', User);
+mongoose.model('Team', Team);
+mongoose.model('Pitch', Pitch);
+mongoose.model('Match', Match);
+mongoose.model('League', League);
