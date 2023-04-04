@@ -2,7 +2,7 @@
   "name": "final-project-oe2015",
   "version": "1.0.0",
   "description": "The content below is an example project proposal / requirements document. Replace the text below the lines marked \"__TODO__\" with details specific to your project. Remove the \"TODO\" lines.",
-  "main": "index.js",
+  "main": "app.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,5 +23,6 @@
     "hbs": "^4.2.0",
     "mongo-sanitize": "^1.1.0",
     "mongoose": "^7.0.2"
-  }
+  },
+  "devDependencies": {}
 }
