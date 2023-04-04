@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 
 console.log('Waiting for connection to database...')
 try {
-  await mongoose.connect('mongodb://localhost/footyNet', {useNewUrlParser: true});
+  await mongoose.connect("mongodb://omarelherraoui:Pq18ZbyEnfPBefpfiYO9qlI3n0leXFmAfJo5HX71Jgqvpz5FzKqBQMnmV64TPXjLhxwZSNcoBPdZACDbEGm7Hw==@omarelherraoui.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@omarelherraoui@", {useNewUrlParser: true});
   console.log('Successfully connected to database.')
 } catch (err) {
   console.log('ERROR: ', err);
