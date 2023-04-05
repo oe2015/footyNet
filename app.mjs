@@ -132,5 +132,82 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// GET /teams
+app.get('/teams', authRequired, async (req, res) => {
+    res.render('teams');
+});
+  
+  // GET /teams/new
+app.get('/teams/new', authRequired, (req, res) => {
+    res.render('createTeam');
+});
+  
+  // POST /teams
+app.post('/teams/new', authRequired, async (req, res) => {
+    try {
+      const name = sanitize(req.body.name);
+      const captain = req.session.user.id;
+      const players = [];
+  
+      const team = new Team({
+        name,
+        captain,
+        players,
+      });
+  
+      await team.save();
+
+      res.render('teamid', { team });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
+    }
+});
+  
+  // GET /teams/:id
+app.get('/teams/:id', authRequired, async (req, res) => {
+    try {
+      const team = await Team.findById(req.params.id).populate('captain players');
+      if (!team) {
+        res.status(404).send('Team not found');
+      } else {
+        res.render('teamid', { team });
+      }
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
+    }
+});
+  
+app.get('/teams/join', authRequired, (req, res) => {
+    res.render('teamsList');
+});
+  
+  // POST /teams/:id/join
+app.post('/teams/:id/join', authRequired, async (req, res) => {
+    try {
+      const team = await Team.findById(req.params.id);
+      if (!team) {
+        res.status(404).send('Team not found');
+        return;
+      }
+  
+      const user = await User.findById(req.session.user.id);
+      if (!user) {
+        res.status(404).send('User not found');
+        return;
+      }
+  
+      team.players.push(user);
+      await team.save();
+    
+      res.render('teamid', { team });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
+    }
+});
+
+
 app.listen(process.env.PORT || 3000);
 

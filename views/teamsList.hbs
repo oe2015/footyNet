@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FootyNet - Join "{{team.name}}"</title>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <h1>Join "{{team.name}}"</h1>
+    <p>Team Captain: {{team.captain.username}}</p>
+    <div class="teams">
+      {{#each team.players}}
+        <div class="team">
+          {{this.username}}
+        </div>
+      {{/each}}
+    </div>
+    <form action="/teams/{{team._id}}/join" method="POST">
+      <button type="submit">Join "{{team.name}}"</button>
+    </form>
+  </body>
+</html>
