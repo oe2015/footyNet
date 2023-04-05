@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FootyNet - Join a Team</title>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <h1>Join a Team</h1>
+    <div class="teams">
+      {{#each teams}}
+        <div class="team">
+          <img src="{{this.logo}}" alt="{{this.name}} Logo">
+          <h2>{{this.name}}</h2>
+          <form method="POST"
+            action="/teams/{{this._id}}/join"
+            enctype="multipart/form-data">
+            <button type="submit">Join</button>
+          </form>
+        </div>
+      {{/each}}
+    </div>
+  </body>
+</html>

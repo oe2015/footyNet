@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FootyNet - {{team.name}}</title>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <div class="team">
+      <img src="{{team.logo}}" alt="{{team.name}} Logo">
+      <h1>{{team.name}}</h1>
+      <h2>Captain:</h2>
+      <p>{{team.captain.username}}</p>
+      <h2>Players:</h2>
+      {{#each team.players}}
+        <p>{{this.username}}</p>
+      {{/each}}
+    </div>
+  </body>
+</html>
