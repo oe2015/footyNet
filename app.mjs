@@ -146,7 +146,9 @@ app.get('/teams/new', authRequired, (req, res) => {
 app.post('/teams/new', authRequired, async (req, res) => {
     try {
       const name = sanitize(req.body.name);
-      const captain = req.session.user.id;
+    //   const captain = req.session.user;
+      const captain = await User.findOne({ username: req.session.user.username }).select('_id');
+
       const players = [];
   
       const team = new Team({
@@ -157,42 +159,32 @@ app.post('/teams/new', authRequired, async (req, res) => {
   
       await team.save();
 
-      res.render('teamid', { team });
+      res.redirect(`/teams/${team._id}`);
     } catch (err) {
       console.error(err);
       res.status(500).send('Internal Server Error');
     }
 });
   
-  // GET /teams/:id
-app.get('/teams/:id', authRequired, async (req, res) => {
+app.get('/teams/join', authRequired, async (req, res) => {
     try {
-      const team = await Team.findById(req.params.id).populate('captain players');
-      if (!team) {
-        res.status(404).send('Team not found');
-      } else {
-        res.render('teamid', { team });
-      }
+      const teams = await Team.find({}).populate('captain').populate('players');
+      res.render('teamsList', { teams });
     } catch (err) {
       console.error(err);
       res.status(500).send('Internal Server Error');
     }
-});
+  });
   
-app.get('/teams/join', authRequired, (req, res) => {
-    res.render('teamsList');
-});
-  
-  // POST /teams/:id/join
-app.post('/teams/:id/join', authRequired, async (req, res) => {
+app.post('/teams/join', authRequired, async (req, res) => {
     try {
-      const team = await Team.findById(req.params.id);
+      const team = await Team.findById(req.body.teamId);
       if (!team) {
         res.status(404).send('Team not found');
         return;
       }
   
-      const user = await User.findById(req.session.user.id);
+      const user = await User.findById(req.session.user);
       if (!user) {
         res.status(404).send('User not found');
         return;
@@ -200,8 +192,27 @@ app.post('/teams/:id/join', authRequired, async (req, res) => {
   
       team.players.push(user);
       await team.save();
-    
-      res.render('teamid', { team });
+  
+      res.redirect(`/teams/${team._id}`);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
+    }
+});
+
+  // GET /teams/:id
+  app.get('/teams/:id', authRequired, async (req, res) => {
+    try {
+    const team = await Team.findById(req.params.id)
+    .populate('captain')
+    .populate('players');
+    console.log(team);
+      if (!team) 
+      {
+        res.status(404).send('Team not found');
+      } else {
+        res.render('teamid', { team });
+      }
     } catch (err) {
       console.error(err);
       res.status(500).send('Internal Server Error');

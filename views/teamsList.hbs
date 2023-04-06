@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>FootyNet - Join "{{team.name}}"</title>
+    <title>FootyNet - Join a Team</title>
     <link rel="stylesheet" href="/css/styles.css">
   </head>
   <body>
-    <h1>Join "{{team.name}}"</h1>
-    <p>Team Captain: {{team.captain.username}}</p>
+    <h1>Join a Team</h1>
     <div class="teams">
-      {{#each team.players}}
+      {{#each teams}}
         <div class="team">
-          {{this.username}}
+          <h2>{{this.name}}</h2>
+          <p>Captain: {{this.captain.username}}</p>
+          <p>Players: {{this.players.length}}</p>
+          <form method="POST" action="/teams/join">
+            <input type="hidden" name="teamId" value="{{this._id}}">
+            <button type="submit">Join</button>
+          </form>
         </div>
       {{/each}}
     </div>
-    <form action="/teams/{{team._id}}/join" method="POST">
-      <button type="submit">Join "{{team.name}}"</button>
-    </form>
   </body>
 </html>
