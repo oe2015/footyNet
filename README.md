@@ -92,7 +92,7 @@ Example League:
 
 /home - user chooses to book a pitch, join league, register etc..
 
-![list create](documentation/home.png)
+![list](documentation/home.png)
 
 /register - allows user to register a new profile
 
