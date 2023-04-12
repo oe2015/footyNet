@@ -365,9 +365,6 @@ async function searchNearbyPitches(lat, lng, distance)
   return pitches;
 }
 
-const requestIp = require('request-ip');
-
-
 app.get('/match/:id/pitches', authRequired, async (req, res) => {
   try {
     const matchId = req.params.id;
