@@ -378,7 +378,7 @@ app.get('/match/:id/pitches', authRequired, async (req, res) => {
     const { lat, lng } = await getCurrentLocation(clientIp);
 
     // Search for nearby pitches using Google Maps API
-    const nearbyPitches = await searchNearbyPitches(lat, lng, 500);
+    const nearbyPitches = await searchNearbyPitches(lat, lng, 5000);
 
     await Promise.all(nearbyPitches.map(async (pitch) => {
       pitch.address = await reverseGeocode(pitch.location.lat, pitch.location.lng);
@@ -420,8 +420,12 @@ app.post('/match/:id/updateMaxRange', authRequired, async (req, res) => {
   try {
     const maxRange = req.body.maxRange;
 
-    const { lat, lng } = await getCurrentLocation(req.ip);
-        
+    const clientIp = req.headers['x-forwarded-for'];
+
+    console.log(clientIp);
+
+    const { lat, lng } = await getCurrentLocation(clientIp);
+
     // Search for nearby pitches using Google Maps API
     const nearbyPitches = await searchNearbyPitches(lat, lng, maxRange);
 
