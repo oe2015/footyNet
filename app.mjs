@@ -330,20 +330,33 @@ async function reverseGeocode(lat, lng) {
   }
 }
 
-async function getCurrentLocation(ip) {
-  const response = await axios.post(
-    geolocationUrl,
-    {
-      ip: ip,
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
+// async function getCurrentLocation(ip) {
+//   const response = await axios.post(
+//     geolocationUrl,
+//     {
+//       ip: ip,
+//     },
+//     {
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//     }
+//   );
 
-  return response.data.location;
+//   return response.data.location;
+// }
+
+async function getCurrentLocation(ip) {
+  const response = await axios.get(`http://ip-api.com/json/${ip}`);
+
+  if (response.data.status === 'success') {
+    return {
+      lat: response.data.lat,
+      lng: response.data.lon,
+    };
+  } else {
+    throw new Error('Failed to get geolocation');
+  }
 }
 
 
