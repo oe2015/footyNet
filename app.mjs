@@ -6,6 +6,8 @@ import sanitize from 'mongo-sanitize';
 import './db.mjs';
 import bcrypt from 'bcryptjs';
 import session from 'express-session';
+import requestIp from 'request-ip';
+
 
 import {startAuthenticatedSession, endAuthenticatedSession} from './auth.mjs';
 
@@ -18,6 +20,8 @@ app.set('view engine', 'hbs');
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.urlencoded({ extended: false }));
+
+app.use(requestIp.mw());
 
 
 app.use(session({
@@ -361,6 +365,9 @@ async function searchNearbyPitches(lat, lng, distance)
   return pitches;
 }
 
+const requestIp = require('request-ip');
+
+
 app.get('/match/:id/pitches', authRequired, async (req, res) => {
   try {
     const matchId = req.params.id;
@@ -368,10 +375,8 @@ app.get('/match/:id/pitches', authRequired, async (req, res) => {
     // Get user's current location using Google Maps API
     // const { lat, lng } = await getCurrentLocation(req.ip);
 
-    const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const { lat, lng } = await getCurrentLocation(clientIP);
+    const { lat, lng } = await getCurrentLocation(req.clientIp);
 
-        
     // Search for nearby pitches using Google Maps API
     const nearbyPitches = await searchNearbyPitches(lat, lng, 500);
 
