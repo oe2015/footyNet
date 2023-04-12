@@ -1,0 +1,24 @@
+<!-- views/match.hbs -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Schedule a Match</title>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <h1>Schedule a Match</h1>
+    <form method="POST" action="/match">
+      <label for="teamId">Select an opponent:</label>
+      <select id="teamId" name="teamId">
+        {{#each teams}}
+            <option value="{{this._id}}">{{this.name}}</option>
+        {{/each}}
+      </select>
+      <br><br>
+      <label for="date">Select a date and time:</label>
+      <input type="datetime-local" id="date" name="date" required>
+      <br><br>
+      <button type="submit">Schedule Match</button>
+    </form>
+  </body>
+</html>

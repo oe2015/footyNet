@@ -7,6 +7,7 @@
   <body>
     <div class="team">
       {{!-- <img src="{{team.logo}}" alt="{{team.name}} Logo"> --}}
+      <h2>Team:</h2>
       <h1>{{team.name}}</h1>
       <h2>Captain:</h2>
       <p>{{team.captain.username}}</p>
@@ -14,6 +15,16 @@
       {{#each team.players}}
         <p>{{this.username}}</p>
       {{/each}}
+      <h2>Matches:</h2>
+      <ul>
+        {{#each matches}}
+          <li>
+            <h3>Date: {{this.date}}</h3>
+            <p>Opponent: {{this.opponent.name}}</p>
+            <p>Pitch: {{this.pitch.name}}</p>
+          </li>
+        {{/each}}
+      </ul>
     </div>
   </body>
 </html>

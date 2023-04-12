@@ -145,21 +145,41 @@ app.get('/teams/new', authRequired, (req, res) => {
   // POST /teams
 app.post('/teams/new', authRequired, async (req, res) => {
     try {
-      const name = sanitize(req.body.name);
-    //   const captain = req.session.user;
-      const captain = await User.findOne({ username: req.session.user.username }).select('_id');
 
-      const players = [];
+      const user = await User.findById(req.session.user._id).populate('team');
+      if (!user) {
+        res.status(404).send('User not found');
+        return;
+      }
+  
+      // If the user is already associated with a team, display an error message
+      if (user.team) 
+      {
+        const teams = await Team.find({}).populate('captain').populate('players');
+        const errorMessage = 'User is already associated with a team';
+        res.render('teamsList', { teams, errorMessage });
+        return;
+      }
+    
+      const name = sanitize(req.body.name);
+
+      const players = [user._id]; 
   
       const team = new Team({
         name,
-        captain,
-        players,
+        captain: user._id,
+        players: players,
       });
   
       await team.save();
 
-      res.redirect(`/teams/${team._id}`);
+      user.team = team;
+      await user.save();
+
+      req.session.user = await User.findById(user._id).populate('team');
+
+
+      res.redirect(`/team/${team._id}`);
     } catch (err) {
       console.error(err);
       res.status(500).send('Internal Server Error');
@@ -176,47 +196,245 @@ app.get('/teams/join', authRequired, async (req, res) => {
     }
   });
   
+
 app.post('/teams/join', authRequired, async (req, res) => {
-    try {
-      const team = await Team.findById(req.body.teamId);
-      if (!team) {
-        res.status(404).send('Team not found');
-        return;
-      }
-  
-      const user = await User.findById(req.session.user);
-      if (!user) {
-        res.status(404).send('User not found');
-        return;
-      }
-  
-      team.players.push(user);
-      await team.save();
-  
-      res.redirect(`/teams/${team._id}`);
-    } catch (err) {
-      console.error(err);
-      res.status(500).send('Internal Server Error');
+  try {
+    const team = await Team.findById(req.body.teamId);
+    if (!team) {
+      res.status(404).send('Team not found');
+      return;
     }
+
+    const user = await User.findById(req.session.user._id).populate('team');
+    if (!user) {
+      res.status(404).send('User not found');
+      return;
+    }
+
+    // If the user is already associated with a team, display an error message
+    if (user.team) {
+      const teams = await Team.find({}).populate('captain').populate('players');
+      const errorMessage = 'User is already associated with a team';
+      res.render('teamsList', { teams, errorMessage });
+      return;
+    }
+
+    team.players.push(user);
+    await team.save();
+
+    user.team = team;
+    await user.save();
+
+    req.session.user = await User.findById(user._id).populate('team');
+
+
+    res.redirect(`/team/${team._id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
-  // GET /teams/:id
-  app.get('/teams/:id', authRequired, async (req, res) => {
-    try {
+app.get('/team/:id', authRequired, async (req, res) => {
+  try {
     const team = await Team.findById(req.params.id)
-    .populate('captain')
-    .populate('players');
-    console.log(team);
-      if (!team) 
-      {
-        res.status(404).send('Team not found');
-      } else {
-        res.render('teamid', { team });
-      }
-    } catch (err) {
-      console.error(err);
-      res.status(500).send('Internal Server Error');
+      .populate('captain')
+      .populate('players')
+      .populate({
+        path: 'matches',
+        populate: [
+          { path: 'team1', select: 'name' },
+          { path: 'team2', select: 'name' },
+          { path: 'pitch', select: 'name' },
+        ],
+      });
+
+    const updatedMatches = team.matches.map((match) => {
+      const opponent = match.team1._id.equals(team._id) ? match.team2 : match.team1;
+      return {
+        ...match._doc,
+        opponent,
+      };
+    });
+
+    res.render('teamid', { team: team, matches: updatedMatches });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+
+app.get('/match', authRequired, async (req, res) => {
+  try {
+    const userTeam = await Team.findById(req.session.user.team).exec();
+    const teams = await Team.find({ _id: { $ne: userTeam._id } });
+    res.render('match', { teams });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// POST /match
+app.post('/match', authRequired, async (req, res) => {
+  try {
+    const team1 = await Team.findById(req.session.user.team);
+    const team2 = await Team.findById(req.body.teamId);
+    const date = new Date(req.body.date);
+
+    const match = new Match({
+      team1: team1._id,
+      team2: team2._id,
+      date: date,
+    });
+
+    await match.save();
+
+    team1.matches.push(match);
+    await team1.save();
+
+    team2.matches.push(match);
+    await team2.save();
+
+    res.redirect(`/match/${match._id}/pitches`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+import { Client } from '@googlemaps/google-maps-services-js';
+import axios from 'axios';
+
+// const googleMapsClient = new Client({});
+
+const apiKey = "AIzaSyC2DWdWaBKbRsIWI7btntY2LdmL9yJK-C0";
+const geolocationUrl = `https://www.googleapis.com/geolocation/v1/geolocate?key=${apiKey}`;
+
+const googleMapsClient = new Client({ apiKey: apiKey }); // Add the apiKey here
+
+async function reverseGeocode(lat, lng) {
+  const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`);
+  const data = await response.json();
+
+  if (data.status === 'OK' && data.results.length > 0) {
+    return data.results[0].formatted_address;
+  } else {
+    return 'Address not found';
+  }
+}
+
+async function getCurrentLocation(ip) {
+  const response = await axios.post(geolocationUrl, {}, 
+  {
+    headers: {
+      'Content-Type': 'application/json'
     }
+  });
+  
+  return response.data.location;
+}
+
+
+async function searchNearbyPitches(lat, lng, distance) 
+{
+  const response = await googleMapsClient.placesNearby({
+    params: {
+      location: `${lat},${lng}`,
+      radius: distance,
+      keyword: 'football pitch',
+      key: apiKey,
+    },
+  });
+  
+  const pitches = response.data.results
+    .filter(result => result.business_status === 'OPERATIONAL')
+    .map(result => ({
+      name: result.name,
+      location: result.geometry.location,
+      availability: true, 
+    }))
+    .filter(pitch => pitch.availability); 
+  
+  return pitches;
+}
+
+app.get('/match/:id/pitches', authRequired, async (req, res) => {
+  try {
+    const matchId = req.params.id;
+
+    // Get user's current location using Google Maps API
+    const { lat, lng } = await getCurrentLocation(req.ip);
+        
+    // Search for nearby pitches using Google Maps API
+    const nearbyPitches = await searchNearbyPitches(lat, lng, 500);
+
+    await Promise.all(nearbyPitches.map(async (pitch) => {
+      pitch.address = await reverseGeocode(pitch.location.lat, pitch.location.lng);
+    }));
+    
+    res.render('pitchList', { pitches: nearbyPitches, matchId});
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.post('/match/:id/pitch', authRequired, async (req, res) => {
+  try {
+    const match = await Match.findById(req.params.id);
+    const teams = await Team.find({}).populate('captain').populate('players');
+
+    const pitch = new Pitch({
+      name: req.body.name,
+      address: req.body.address,
+    })
+
+    await pitch.save();
+
+    match.pitch = pitch._id;
+    await match.save();
+
+    const user = await User.findById(req.session.user._id).populate('team');
+    const teamId = user.team._id;
+
+    res.redirect(`/team/${teamId}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.post('/match/:id/updateMaxRange', authRequired, async (req, res) => {
+  try {
+    const maxRange = req.body.maxRange;
+
+    const { lat, lng } = await getCurrentLocation(req.ip);
+        
+    // Search for nearby pitches using Google Maps API
+    const nearbyPitches = await searchNearbyPitches(lat, lng, maxRange);
+
+    await Promise.all(nearbyPitches.map(async (pitch) => {
+      pitch.address = await reverseGeocode(pitch.location.lat, pitch.location.lng);
+    }));
+
+    res.render('pitchList', { matchId: req.params.id, pitches: nearbyPitches });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.get('/profile', authRequired, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.user._id).populate('team');
+    res.render('profile', { user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 
