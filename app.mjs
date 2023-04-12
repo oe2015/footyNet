@@ -371,8 +371,11 @@ app.get('/match/:id/pitches', authRequired, async (req, res) => {
 
     // Get user's current location using Google Maps API
     // const { lat, lng } = await getCurrentLocation(req.ip);
+    const clientIp = req.headers['x-forwarded-for'];
 
-    const { lat, lng } = await getCurrentLocation(req.clientIp);
+    console.log(clientIp);
+
+    const { lat, lng } = await getCurrentLocation(clientIp);
 
     // Search for nearby pitches using Google Maps API
     const nearbyPitches = await searchNearbyPitches(lat, lng, 500);
