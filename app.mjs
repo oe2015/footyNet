@@ -330,17 +330,6 @@ async function reverseGeocode(lat, lng) {
   }
 }
 
-// async function getCurrentLocation(ip) {
-//   const response = await axios.post(geolocationUrl, {}, 
-//   {
-//     headers: {
-//       'Content-Type': 'application/json'
-//     }
-//   });
-  
-//   return response.data.location;
-// }
-
 async function getCurrentLocation(ip) {
   const response = await axios.post(
     geolocationUrl,
@@ -387,7 +376,10 @@ app.get('/match/:id/pitches', authRequired, async (req, res) => {
 
     // Get user's current location using Google Maps API
     // const { lat, lng } = await getCurrentLocation(req.ip);
-    const clientIp = req.headers['x-forwarded-for'];
+    const clientIpWithPort = req.headers['x-forwarded-for'];
+
+    // Remove the port number from the IP address
+    const clientIp = clientIpWithPort.split(':')[0];
 
     console.log(clientIp);
 
@@ -440,8 +432,10 @@ app.post('/match/:id/updateMaxRange', authRequired, async (req, res) => {
   try {
     const maxRange = req.body.maxRange;
 
-    const clientIp = req.headers['x-forwarded-for'];
+    const clientIpWithPort = req.headers['x-forwarded-for'];
 
+    // Remove the port number from the IP address
+    const clientIp = clientIpWithPort.split(':')[0];
     console.log(clientIp);
 
     const { lat, lng } = await getCurrentLocation(clientIp);
