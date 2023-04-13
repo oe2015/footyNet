@@ -30,7 +30,6 @@ const Team = new mongoose.Schema({
 const Pitch = new mongoose.Schema({
     name: String,
     address: String,
-    // availability: [Date],
 });
 
 const Match = new mongoose.Schema({

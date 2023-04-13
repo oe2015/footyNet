@@ -330,22 +330,6 @@ async function reverseGeocode(lat, lng) {
   }
 }
 
-// async function getCurrentLocation(ip) {
-//   const response = await axios.post(
-//     geolocationUrl,
-//     {
-//       ip: ip,
-//     },
-//     {
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     }
-//   );
-
-//   return response.data.location;
-// }
-
 async function getCurrentLocation(ip) {
   const response = await axios.get(`http://ip-api.com/json/${ip}`);
 
@@ -394,16 +378,10 @@ app.get('/match/:id/pitches', authRequired, async (req, res) => {
     // Remove the port number from the IP address
     const clientIp = clientIpWithPort.split(':')[0];
 
-    console.log(clientIp);
-
     const { lat, lng } = await getCurrentLocation(clientIp);
-
-    console.log(lat, lng);
 
     // Search for nearby pitches using Google Maps API
     const nearbyPitches = await searchNearbyPitches(lat, lng, 5000);
-
-    console.log(nearbyPitches);
 
     await Promise.all(nearbyPitches.map(async (pitch) => {
       pitch.address = await reverseGeocode(pitch.location.lat, pitch.location.lng);
@@ -415,6 +393,49 @@ app.get('/match/:id/pitches', authRequired, async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+
+import nodemailer from 'nodemailer';
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // Replace this with your email service
+  auth: {
+    user: 'footynet1234@gmail.com', // Replace this with your email
+    pass: 'bfdzxoazktaeqngq',
+  },
+});
+
+
+async function sendBookingEmail(userEmail, match, pitch) {
+  const opponent = await Team.findById(match.team2);
+
+  const mailOptions = {
+    from: 'footynet1234@gmail.com', // Replace this with your email
+    to: userEmail,
+    subject: 'Match Booking Confirmation',
+    text: `Dear user,
+
+    Your match booking has been confirmed!
+
+    Match details:
+    - Date and time: ${match.date}
+    - Opponent: ${opponent.name}
+    - Pitch name: ${pitch.name}
+    - Pitch address: ${pitch.address}
+
+    Good luck and have fun!
+
+    Best regards,
+    FootyNet Team`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully');
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
+}
+
 
 app.post('/match/:id/pitch', authRequired, async (req, res) => {
   try {
@@ -434,6 +455,9 @@ app.post('/match/:id/pitch', authRequired, async (req, res) => {
     const user = await User.findById(req.session.user._id).populate('team');
     const teamId = user.team._id;
 
+    // Send booking confirmation email
+    await sendBookingEmail(user.email, match, pitch);
+
     res.redirect(`/team/${teamId}`);
   } catch (err) {
     console.error(err);
@@ -449,16 +473,11 @@ app.post('/match/:id/updateMaxRange', authRequired, async (req, res) => {
 
     // Remove the port number from the IP address
     const clientIp = clientIpWithPort.split(':')[0];
-    console.log(clientIp);
 
     const { lat, lng } = await getCurrentLocation(clientIp);
 
-    console.log(lat, lng);
-
     // Search for nearby pitches using Google Maps API
     const nearbyPitches = await searchNearbyPitches(lat, lng, maxRange);
-
-    console.log(nearbyPitches);
 
     await Promise.all(nearbyPitches.map(async (pitch) => {
       pitch.address = await reverseGeocode(pitch.location.lat, pitch.location.lng);
