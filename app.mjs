@@ -68,6 +68,12 @@ app.post('/signup', async (req, res) => {
 
   try {
     const existingUser = await User.findOne({username: username}).exec();
+    const existingUser1 = await User.findOne({email: email}).exec();
+    if (existingUser1) 
+    {
+      res.render('signup', {message: 'email already exists'});
+      return;
+    }
     if (existingUser) 
     {
       res.render('signup', {message: 'Username already exists'});
@@ -270,11 +276,28 @@ app.get('/team/:id', authRequired, async (req, res) => {
 
 
 
+// app.get('/match', authRequired, async (req, res) => {
+//   try {
+//     const userTeam = await Team.findById(req.session.user.team).exec();
+//     const teams = await Team.find({ _id: { $ne: userTeam._id } });
+//     res.render('match', { teams });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send('Internal Server Error');
+//   }
+// });
+
 app.get('/match', authRequired, async (req, res) => {
   try {
     const userTeam = await Team.findById(req.session.user.team).exec();
-    const teams = await Team.find({ _id: { $ne: userTeam._id } });
-    res.render('match', { teams });
+    const hasTeam = !!userTeam;
+
+    if (hasTeam) {
+      const teams = await Team.find({ _id: { $ne: userTeam._id } });
+      res.render('match', { teams, hasTeam });
+    } else {
+      res.render('match', { hasTeam });
+    }
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal Server Error');

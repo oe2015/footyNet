@@ -15,7 +15,7 @@ try {
 
 const User = new mongoose.Schema({
     username: String,
-    email: { type: String, unique: true, sparse: true},
+    email: String,
     password: String,
     team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', sparse: true},
   });
