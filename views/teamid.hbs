@@ -6,7 +6,6 @@
   </head>
   <body>
     <div class="team">
-      {{!-- <img src="{{team.logo}}" alt="{{team.name}} Logo"> --}}
       <h2>Team:</h2>
       <h1>{{team.name}}</h1>
       <h2>Captain:</h2>
@@ -15,6 +14,14 @@
       {{#each team.players}}
         <p>{{this.username}}</p>
       {{/each}}
+      <h2>Leagues:</h2>
+      <ul>
+        {{#each team.leagues}}
+          <li>
+            <a href="/league/{{this._id}}">{{this.name}}</a>
+          </li>
+        {{/each}}
+      </ul>
       <h2>Matches:</h2>
       <ul>
         {{#each matches}}
@@ -28,3 +35,4 @@
     </div>
   </body>
 </html>
+

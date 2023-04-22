@@ -25,6 +25,7 @@ const Team = new mongoose.Schema({
     captain: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     players: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     matches: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Match' }],
+    leagues: [{ type: mongoose.Schema.Types.ObjectId, ref: 'League' }]
   });
   
 const Pitch = new mongoose.Schema({
@@ -46,6 +47,13 @@ const League = new mongoose.Schema({
     standings: [{
       team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
       points: Number,
+      GF: Number,
+      GA: Number,
+      GD: Number,
+      MP: Number,
+      W: Number,
+      D: Number,
+      L: Number
     }],
 });
 

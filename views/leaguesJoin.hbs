@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FootyNet - Join a League</title>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <h1>Join a League</h1>
+    {{#if errorMessage}}
+    <div class="alert alert-danger">
+        {{errorMessage}}
+    </div>
+    {{/if}}
+    <ul>
+      {{#each leagues}}
+        <li>
+          {{name}}
+          <form action="/leagues/join/{{_id}}" method="POST" style="display: inline;">
+            <button type="submit">Join</button>
+          </form>
+        </li>
+      {{/each}}
+    </ul>
+  </body>
+</html>

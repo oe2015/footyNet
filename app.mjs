@@ -257,9 +257,24 @@ app.get('/team/:id', authRequired, async (req, res) => {
           { path: 'team2', select: 'name' },
           { path: 'pitch', select: 'name' },
         ],
-      });
+      }).populate('leagues');
 
-    const updatedMatches = team.matches.map((match) => {
+    // Filter matches based on the current date
+    const currentDate = new Date();
+    const updatedMatches = team.matches.filter(match => match.date > currentDate);
+
+    // Remove outdated matches from the database
+    const outdatedMatches = team.matches.filter(match => match.date <= currentDate);
+    for (const match of outdatedMatches) {
+      await Match.findByIdAndDelete(match._id);
+    }
+
+    // Update the team's matches
+    team.matches = updatedMatches;
+    await team.save();
+
+    // Prepare matches data for rendering
+    const matchesData = updatedMatches.map((match) => {
       const opponent = match.team1._id.equals(team._id) ? match.team2 : match.team1;
       return {
         ...match._doc,
@@ -267,7 +282,7 @@ app.get('/team/:id', authRequired, async (req, res) => {
       };
     });
 
-    res.render('teamid', { team: team, matches: updatedMatches });
+    res.render('teamid', { team: team, matches: matchesData });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal Server Error');
@@ -275,17 +290,6 @@ app.get('/team/:id', authRequired, async (req, res) => {
 });
 
 
-
-// app.get('/match', authRequired, async (req, res) => {
-//   try {
-//     const userTeam = await Team.findById(req.session.user.team).exec();
-//     const teams = await Team.find({ _id: { $ne: userTeam._id } });
-//     res.render('match', { teams });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send('Internal Server Error');
-//   }
-// });
 
 app.get('/match', authRequired, async (req, res) => {
   try {
@@ -325,12 +329,26 @@ app.post('/match', authRequired, async (req, res) => {
     team2.matches.push(match);
     await team2.save();
 
+    // Filter matches based on the current date
+    const currentDate = new Date();
+    const outdatedMatches = await Match.find({
+      $or: [{ team1: team1._id }, { team2: team1._id }],
+      date: { $lte: currentDate },
+    });
+
+    // Remove outdated matches and associated pitches
+    for (const outdatedMatch of outdatedMatches) {
+      await Pitch.findByIdAndDelete(outdatedMatch.pitch);
+      await Match.findByIdAndDelete(outdatedMatch._id);
+    }
+
     res.redirect(`/match/${match._id}/pitches`);
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal Server Error');
   }
 });
+
 
 import { Client } from '@googlemaps/google-maps-services-js';
 import axios from 'axios';
@@ -523,6 +541,219 @@ app.get('/profile', authRequired, async (req, res) => {
   }
 });
 
+app.get('/leagues', authRequired, (req, res) => {
+  res.render('leagues');
+});
+
+app.get('/leagues/new', authRequired, (req, res) => {
+  res.render('leaguesNew');
+});
+
+app.post('/leagues/new', authRequired, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.user._id).populate('team');
+    const team = user.team;
+
+    // Create new league
+    const newLeague = new League({
+      name: req.body.leagueName,
+      teams: [team._id],
+      standings: [{
+        team: team._id,
+        points: 0,
+        GF: 0,
+        GA: 0,
+        GD: 0,
+        MP: 0,
+        W: 0,
+        D: 0,
+        L: 0
+      }]
+    });
+
+    await newLeague.save();
+
+    // Update the team schema with the new league
+    team.leagues.push(newLeague._id);
+    await team.save();
+
+    // Redirect to the team page
+    res.redirect(`/league/${newLeague._id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.get('/leagues/join', authRequired, async (req, res) => {
+  try {
+    const leagues = await League.find();
+    res.render('leaguesJoin', { leagues });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.post('/leagues/join/:leagueId', authRequired, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.user._id).populate('team');
+    const team = user.team;
+    const league = await League.findById(req.params.leagueId);
+
+    // Check if the team has already joined the league
+    const hasJoined = league.teams.some(teamId => teamId.equals(team._id));
+    if (hasJoined) {
+      // Show an error message if the team has already joined
+      const leagues = await League.find({});
+      const errorMessage = 'Already joined this league';
+      return res.render('leaguesJoin', { leagues, errorMessage });
+    }
+
+    // Add team to the league
+    league.teams.push(team._id);
+
+    // Initialize the team's standings in the league
+    league.standings.push({
+      team: team._id,
+      points: 0,
+      GF: 0,
+      GA: 0,
+      GD: 0,
+      MP: 0,
+      W: 0,
+      D: 0,
+      L: 0
+    });
+
+    await league.save();
+
+    // Add league to the team
+    team.leagues.push(league._id);
+    await team.save();
+
+    // Redirect to the league page
+    res.redirect(`/league/${league._id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+import hbs from 'hbs';
+
+hbs.registerHelper('addOne', function (value) {
+  return parseInt(value, 10) + 1;
+});
+
+app.get('/league/:leagueId', async (req, res) => {
+  try {
+    const league = await League.findById(req.params.leagueId)
+      .populate('teams')
+      .populate('schedule')
+      .populate({
+        path: 'standings.team',
+        model: 'Team'
+      });
+
+    // Sort the standings
+    league.standings.sort((a, b) => {
+      if (a.points === b.points) {
+        return b.GD - a.GD;
+      } else {
+        return b.points - a.points;
+      }
+    });
+
+    res.render('leagueID', { league: league });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.get('/leagues/update', authRequired, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.user._id).populate('team');
+    const team = user.team;
+    const matches = await Match.find({ $or: [{ team1: team._id }, { team2: team._id }] })
+      .populate('team1')
+      .populate('team2')
+      .populate('pitch');
+
+    res.render('leagueUpdate', { team, matches });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+async function updateStandings(league, userTeam, opponent, userTeamGoals, opponentGoals) {
+  // Find standings for the user's team and the opponent
+  const userTeamStanding = league.standings.find(standing => standing.team.equals(userTeam._id));
+  const opponentStanding = league.standings.find(standing => standing.team.equals(opponent._id));
+
+  // Update GF, GA, and GD for both teams
+  userTeamStanding.GF += userTeamGoals;
+  userTeamStanding.GA += opponentGoals;
+  userTeamStanding.GD = userTeamStanding.GF - userTeamStanding.GA;
+
+  opponentStanding.GF += opponentGoals;
+  opponentStanding.GA += userTeamGoals;
+  opponentStanding.GD = opponentStanding.GF - opponentStanding.GA;
+
+  // Update MP, W, D, L, and points based on the match result
+  userTeamStanding.MP += 1;
+  opponentStanding.MP += 1;
+
+  if (userTeamGoals > opponentGoals) {
+    userTeamStanding.W += 1;
+    userTeamStanding.points += 3;
+    opponentStanding.L += 1;
+  } else if (userTeamGoals < opponentGoals) {
+    userTeamStanding.L += 1;
+    opponentStanding.W += 1;
+    opponentStanding.points += 3;
+  } else {
+    userTeamStanding.D += 1;
+    userTeamStanding.points += 1;
+    opponentStanding.D += 1;
+    opponentStanding.points += 1;
+  }
+
+  // Save the updated league standings
+  await league.save();
+}
+
+app.post('/leagues/update', authRequired, async (req, res) => {
+  try {
+    const matchId = req.body.matchId;
+    const userTeamGoals = parseInt(req.body.userTeamGoals);
+    const opponentGoals = parseInt(req.body.opponentGoals);
+
+    const match = await Match.findById(matchId).populate('team1').populate('team2');
+    const userTeam = match.team1._id.equals(req.session.user.team) ? match.team1 : match.team2;
+    const opponent = match.team1._id.equals(req.session.user.team) ? match.team2 : match.team1;
+
+    // Find the league containing both teams
+    const league = await League.findOne({
+      teams: { $all: [userTeam._id, opponent._id] }
+    });
+
+    // Update the league standings based on the results
+    await updateStandings(league, userTeam, opponent, userTeamGoals, opponentGoals);
+
+    // Remove the match and pitch from the database
+    await Pitch.findByIdAndDelete(match.pitch);
+    await Match.findByIdAndDelete(matchId);
+
+    res.redirect(`/league/${league._id}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
 app.listen(process.env.PORT || 3000);
 

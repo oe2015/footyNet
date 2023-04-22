@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FootyNet - Update League Matches</title>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <h1>Update Matches</h1>
+    {{#each matches}}
+      <form action="/leagues/update" method="POST">
+        <input type="hidden" name="matchId" value="{{_id}}">
+        <p>{{team1.name}} vs {{team2.name}} - {{pitch.name}} - {{date}}</p>
+        {{#if isUserTeam1}}
+          <label for="userTeamGoals">{{team1.name}} Goals:</label>
+          <input type="number" name="userTeamGoals" required>
+          <label for="opponentGoals">{{team2.name}} Goals:</label>
+          <input type="number" name="opponentGoals" required>
+        {{else}}
+          <label for="userTeamGoals">{{team2.name}} Goals:</label>
+          <input type="number" name="userTeamGoals" required>
+          <label for="opponentGoals">{{team1.name}} Goals:</label>
+          <input type="number" name="opponentGoals" required>
+        {{/if}}
+        <button type="submit">Update</button>
+      </form>
+    {{/each}}
+  </body>
+</html>
+

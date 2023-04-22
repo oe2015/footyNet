@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>FootyNet - {{league.name}}</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: center;
+      }
+      th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+      }
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>{{league.name}}</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Position</th>
+          <th>Team</th>
+          <th>MP</th>
+          <th>W</th>
+          <th>D</th>
+          <th>L</th>
+          <th>GF</th>
+          <th>GA</th>
+          <th>GD</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each league.standings}}
+          <tr>
+            <td>{{addOne @index}}</td>
+            <td>{{team.name}}</td>
+            <td>{{MP}}</td>
+            <td>{{W}}</td>
+            <td>{{D}}</td>
+            <td>{{L}}</td>
+            <td>{{GF}}</td>
+            <td>{{GA}}</td>
+            <td>{{GD}}</td>
+            <td>{{points}}</td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </body>
+</html>
