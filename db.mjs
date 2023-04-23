@@ -38,6 +38,8 @@ const Match = new mongoose.Schema({
     team2: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true },
     pitch: { type: mongoose.Schema.Types.ObjectId, ref: 'Pitch' },
     date: Date,
+    team1Goals: Number,
+    team2Goals: Number
 });
 
 const League = new mongoose.Schema({

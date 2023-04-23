@@ -245,6 +245,50 @@ app.post('/teams/join', authRequired, async (req, res) => {
   }
 });
 
+// app.get('/team/:id', authRequired, async (req, res) => {
+//   try {
+//     const team = await Team.findById(req.params.id)
+//       .populate('captain')
+//       .populate('players')
+//       .populate({
+//         path: 'matches',
+//         populate: [
+//           { path: 'team1', select: 'name' },
+//           { path: 'team2', select: 'name' },
+//           { path: 'pitch', select: 'name' },
+//         ],
+//       }).populate('leagues');
+
+//     // Filter matches based on the current date
+//     // const currentDate = new Date();
+//     // const updatedMatches = team.matches.filter(match => match.date > currentDate);
+
+//     // // Remove outdated matches from the database
+//     // const outdatedMatches = team.matches.filter(match => match.date <= currentDate);
+//     // for (const match of outdatedMatches) {
+//     //   await Match.findByIdAndDelete(match._id);
+//     // }
+
+//     // // Update the team's matches
+//     // team.matches = updatedMatches;
+//     // await team.save();
+
+//     // Prepare matches data for rendering
+//     const matchesData = team.matches.map((match) => {
+//       const opponent = match.team1._id.equals(team._id) ? match.team2 : match.team1;
+//       return {
+//         ...match._doc,
+//         opponent,
+//       };
+//     });
+
+//     res.render('teamid', { team: team, matches: matchesData });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send('Internal Server Error');
+//   }
+// });
+
 app.get('/team/:id', authRequired, async (req, res) => {
   try {
     const team = await Team.findById(req.params.id)
@@ -259,30 +303,22 @@ app.get('/team/:id', authRequired, async (req, res) => {
         ],
       }).populate('leagues');
 
-    // Filter matches based on the current date
-    const currentDate = new Date();
-    const updatedMatches = team.matches.filter(match => match.date > currentDate);
+    // Prepare matches data for rendering
+    const upcomingMatches = [];
+    const matchHistory = [];
 
-    // Remove outdated matches from the database
-    const outdatedMatches = team.matches.filter(match => match.date <= currentDate);
-    for (const match of outdatedMatches) {
-      await Match.findByIdAndDelete(match._id);
+    for (const match of team.matches) {
+      const opponent = match.team1._id.equals(team._id) ? match.team2 : match.team1;
+      const matchData = { ...match._doc, opponent };
+
+      if (match.team1Goals === undefined || match.team2Goals === undefined) {
+        upcomingMatches.push(matchData);
+      } else {
+        matchHistory.push(matchData);
+      }
     }
 
-    // Update the team's matches
-    team.matches = updatedMatches;
-    await team.save();
-
-    // Prepare matches data for rendering
-    const matchesData = updatedMatches.map((match) => {
-      const opponent = match.team1._id.equals(team._id) ? match.team2 : match.team1;
-      return {
-        ...match._doc,
-        opponent,
-      };
-    });
-
-    res.render('teamid', { team: team, matches: matchesData });
+    res.render('teamid', { team: team, upcomingMatches: upcomingMatches, matchHistory: matchHistory });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal Server Error');
@@ -330,17 +366,17 @@ app.post('/match', authRequired, async (req, res) => {
     await team2.save();
 
     // Filter matches based on the current date
-    const currentDate = new Date();
-    const outdatedMatches = await Match.find({
-      $or: [{ team1: team1._id }, { team2: team1._id }],
-      date: { $lte: currentDate },
-    });
+    // const currentDate = new Date();
+    // const outdatedMatches = await Match.find({
+    //   $or: [{ team1: team1._id }, { team2: team1._id }],
+    //   date: { $lte: currentDate },
+    // });
 
-    // Remove outdated matches and associated pitches
-    for (const outdatedMatch of outdatedMatches) {
-      await Pitch.findByIdAndDelete(outdatedMatch.pitch);
-      await Match.findByIdAndDelete(outdatedMatch._id);
-    }
+    // // Remove outdated matches and associated pitches
+    // for (const outdatedMatch of outdatedMatches) {
+    //   await Pitch.findByIdAndDelete(outdatedMatch.pitch);
+    //   await Match.findByIdAndDelete(outdatedMatch._id);
+    // }
 
     res.redirect(`/match/${match._id}/pitches`);
   } catch (err) {
@@ -356,6 +392,8 @@ import axios from 'axios';
 // const googleMapsClient = new Client({});
 
 const apiKey = "AIzaSyDoeV0sYWpX7kKsnt32HcySs_qThhxv7i8";
+// const apiKey = "AIzaSyANH42_Hv7wGYQsWkFhOjLMiZxTGqaAExY";
+
 const geolocationUrl = `https://www.googleapis.com/geolocation/v1/geolocate?key=${apiKey}`;
 
 const googleMapsClient = new Client({ apiKey: apiKey }); // Add the apiKey here
@@ -414,12 +452,12 @@ app.get('/match/:id/pitches', authRequired, async (req, res) => {
 
     // Get user's current location using Google Maps API
     // const { lat, lng } = await getCurrentLocation(req.ip);
-    const clientIpWithPort = req.headers['x-forwarded-for'];
+    // const clientIpWithPort = req.headers['x-forwarded-for'];
 
-    // Remove the port number from the IP address
-    const clientIp = clientIpWithPort.split(':')[0];
+    // // Remove the port number from the IP address
+    // const clientIp = clientIpWithPort.split(':')[0];
 
-    const { lat, lng } = await getCurrentLocation(clientIp);
+    const { lat, lng } = await getCurrentLocation('216.165.95.162');
 
     // Search for nearby pitches using Google Maps API
     const nearbyPitches = await searchNearbyPitches(lat, lng, 5000);
@@ -510,12 +548,12 @@ app.post('/match/:id/updateMaxRange', authRequired, async (req, res) => {
   try {
     const maxRange = req.body.maxRange;
 
-    const clientIpWithPort = req.headers['x-forwarded-for'];
+    // const clientIpWithPort = req.headers['x-forwarded-for'];
 
-    // Remove the port number from the IP address
-    const clientIp = clientIpWithPort.split(':')[0];
+    // // Remove the port number from the IP address
+    // const clientIp = clientIpWithPort.split(':')[0];
 
-    const { lat, lng } = await getCurrentLocation(clientIp);
+    const { lat, lng } = await getCurrentLocation('216.165.95.162');
 
     // Search for nearby pitches using Google Maps API
     const nearbyPitches = await searchNearbyPitches(lat, lng, maxRange);
@@ -677,17 +715,24 @@ app.get('/leagues/update', authRequired, async (req, res) => {
   try {
     const user = await User.findById(req.session.user._id).populate('team');
     const team = user.team;
-    const matches = await Match.find({ $or: [{ team1: team._id }, { team2: team._id }] })
+    const matches = await Match.find({
+      $or: [
+        { team1: team._id, team1Goals: { $exists: false } },
+        { team2: team._id, team2Goals: { $exists: false } }
+      ]
+    })
       .populate('team1')
       .populate('team2')
       .populate('pitch');
 
-    res.render('leagueUpdate', { team, matches });
+    const leagues = await League.find({ teams: team._id }).populate('teams');
+    res.render('leagueUpdate', { team, matches, leagues });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal Server Error');
   }
 });
+
 
 async function updateStandings(league, userTeam, opponent, userTeamGoals, opponentGoals) {
   // Find standings for the user's team and the opponent
@@ -731,29 +776,32 @@ app.post('/leagues/update', authRequired, async (req, res) => {
     const matchId = req.body.matchId;
     const userTeamGoals = parseInt(req.body.userTeamGoals);
     const opponentGoals = parseInt(req.body.opponentGoals);
+    const leagueId = req.body.leagueId;
 
     const match = await Match.findById(matchId).populate('team1').populate('team2');
     const userTeam = match.team1._id.equals(req.session.user.team) ? match.team1 : match.team2;
     const opponent = match.team1._id.equals(req.session.user.team) ? match.team2 : match.team1;
 
-    // Find the league containing both teams
-    const league = await League.findOne({
-      teams: { $all: [userTeam._id, opponent._id] }
-    });
+    // Find the league specified by the user
+    const league = await League.findById(leagueId);
 
     // Update the league standings based on the results
-    await updateStandings(league, userTeam, opponent, userTeamGoals, opponentGoals);
+    if (league) {
+      await updateStandings(league, userTeam, opponent, userTeamGoals, opponentGoals);
+    }
 
-    // Remove the match and pitch from the database
-    await Pitch.findByIdAndDelete(match.pitch);
-    await Match.findByIdAndDelete(matchId);
+    // Update the match score
+    match.team1Goals = userTeamGoals;
+    match.team2Goals = opponentGoals;
+    await match.save();
 
-    res.redirect(`/league/${league._id}`);
+    res.redirect(`/team/${userTeam._id}`);
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal Server Error');
   }
 });
+
 
 app.listen(process.env.PORT || 3000);
 

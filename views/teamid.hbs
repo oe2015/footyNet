@@ -22,13 +22,24 @@
           </li>
         {{/each}}
       </ul>
-      <h2>Matches:</h2>
+      <h2>Upcoming Matches:</h2>
       <ul>
-        {{#each matches}}
+        {{#each upcomingMatches}}
           <li>
             <h3>Date: {{this.date}}</h3>
             <p>Opponent: {{this.opponent.name}}</p>
             <p>Pitch: {{this.pitch.name}}</p>
+          </li>
+        {{/each}}
+      </ul>
+      <h2>Match History:</h2>
+      <ul>
+        {{#each matchHistory}}
+          <li>
+            <h3>Date: {{this.date}}</h3>
+            <p>Opponent: {{this.opponent.name}}</p>
+            <p>Pitch: {{this.pitch.name}}</p>
+            <p>Score: {{this.team1.name}} {{this.team1Goals}} - {{this.team2Goals}} {{this.team2.name}}</p>
           </li>
         {{/each}}
       </ul>

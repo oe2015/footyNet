@@ -10,20 +10,21 @@
       <form action="/leagues/update" method="POST">
         <input type="hidden" name="matchId" value="{{_id}}">
         <p>{{team1.name}} vs {{team2.name}} - {{pitch.name}} - {{date}}</p>
-        {{#if isUserTeam1}}
           <label for="userTeamGoals">{{team1.name}} Goals:</label>
           <input type="number" name="userTeamGoals" required>
           <label for="opponentGoals">{{team2.name}} Goals:</label>
           <input type="number" name="opponentGoals" required>
-        {{else}}
-          <label for="userTeamGoals">{{team2.name}} Goals:</label>
-          <input type="number" name="userTeamGoals" required>
-          <label for="opponentGoals">{{team1.name}} Goals:</label>
-          <input type="number" name="opponentGoals" required>
-        {{/if}}
+        <select id="leagueId" name="leagueId" required>
+          <option value="" disabled selected>Choose a league</option>
+          {{#each ../leagues}}
+            <option value="{{this._id}}">{{this.name}}</option>
+          {{/each}}
+        </select>
         <button type="submit">Update</button>
       </form>
     {{/each}}
   </body>
 </html>
+
+
 
