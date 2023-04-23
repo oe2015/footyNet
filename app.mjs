@@ -355,7 +355,7 @@ import axios from 'axios';
 
 // const googleMapsClient = new Client({});
 
-const apiKey = "AIzaSyC2DWdWaBKbRsIWI7btntY2LdmL9yJK-C0";
+const apiKey = "AIzaSyDoeV0sYWpX7kKsnt32HcySs_qThhxv7i8";
 const geolocationUrl = `https://www.googleapis.com/geolocation/v1/geolocate?key=${apiKey}`;
 
 const googleMapsClient = new Client({ apiKey: apiKey }); // Add the apiKey here
