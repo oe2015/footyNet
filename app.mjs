@@ -245,49 +245,6 @@ app.post('/teams/join', authRequired, async (req, res) => {
   }
 });
 
-// app.get('/team/:id', authRequired, async (req, res) => {
-//   try {
-//     const team = await Team.findById(req.params.id)
-//       .populate('captain')
-//       .populate('players')
-//       .populate({
-//         path: 'matches',
-//         populate: [
-//           { path: 'team1', select: 'name' },
-//           { path: 'team2', select: 'name' },
-//           { path: 'pitch', select: 'name' },
-//         ],
-//       }).populate('leagues');
-
-//     // Filter matches based on the current date
-//     // const currentDate = new Date();
-//     // const updatedMatches = team.matches.filter(match => match.date > currentDate);
-
-//     // // Remove outdated matches from the database
-//     // const outdatedMatches = team.matches.filter(match => match.date <= currentDate);
-//     // for (const match of outdatedMatches) {
-//     //   await Match.findByIdAndDelete(match._id);
-//     // }
-
-//     // // Update the team's matches
-//     // team.matches = updatedMatches;
-//     // await team.save();
-
-//     // Prepare matches data for rendering
-//     const matchesData = team.matches.map((match) => {
-//       const opponent = match.team1._id.equals(team._id) ? match.team2 : match.team1;
-//       return {
-//         ...match._doc,
-//         opponent,
-//       };
-//     });
-
-//     res.render('teamid', { team: team, matches: matchesData });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send('Internal Server Error');
-//   }
-// });
 
 app.get('/team/:id', authRequired, async (req, res) => {
   try {
@@ -365,19 +322,6 @@ app.post('/match', authRequired, async (req, res) => {
     team2.matches.push(match);
     await team2.save();
 
-    // Filter matches based on the current date
-    // const currentDate = new Date();
-    // const outdatedMatches = await Match.find({
-    //   $or: [{ team1: team1._id }, { team2: team1._id }],
-    //   date: { $lte: currentDate },
-    // });
-
-    // // Remove outdated matches and associated pitches
-    // for (const outdatedMatch of outdatedMatches) {
-    //   await Pitch.findByIdAndDelete(outdatedMatch.pitch);
-    //   await Match.findByIdAndDelete(outdatedMatch._id);
-    // }
-
     res.redirect(`/match/${match._id}/pitches`);
   } catch (err) {
     console.error(err);
@@ -451,13 +395,13 @@ app.get('/match/:id/pitches', authRequired, async (req, res) => {
     const matchId = req.params.id;
 
     // Get user's current location using Google Maps API
-    // const { lat, lng } = await getCurrentLocation(req.ip);
-    // const clientIpWithPort = req.headers['x-forwarded-for'];
+    // const { lat, lng } = await getCurrentLocation('216.165.95.162');
+    const clientIpWithPort = req.headers['x-forwarded-for'];
 
-    // // Remove the port number from the IP address
-    // const clientIp = clientIpWithPort.split(':')[0];
+    // Remove the port number from the IP address
+    const clientIp = clientIpWithPort.split(':')[0];
 
-    const { lat, lng } = await getCurrentLocation('216.165.95.162');
+    const { lat, lng } = await getCurrentLocation(clientIp);
 
     // Search for nearby pitches using Google Maps API
     const nearbyPitches = await searchNearbyPitches(lat, lng, 5000);
@@ -548,12 +492,12 @@ app.post('/match/:id/updateMaxRange', authRequired, async (req, res) => {
   try {
     const maxRange = req.body.maxRange;
 
-    // const clientIpWithPort = req.headers['x-forwarded-for'];
+    const clientIpWithPort = req.headers['x-forwarded-for'];
 
-    // // Remove the port number from the IP address
-    // const clientIp = clientIpWithPort.split(':')[0];
+    // Remove the port number from the IP address
+    const clientIp = clientIpWithPort.split(':')[0];
 
-    const { lat, lng } = await getCurrentLocation('216.165.95.162');
+    const { lat, lng } = await getCurrentLocation(clientIp);
 
     // Search for nearby pitches using Google Maps API
     const nearbyPitches = await searchNearbyPitches(lat, lng, maxRange);
@@ -678,7 +622,6 @@ app.post('/leagues/join/:leagueId', authRequired, async (req, res) => {
   }
 });
 
-
 import hbs from 'hbs';
 
 hbs.registerHelper('addOne', function (value) {
@@ -711,6 +654,7 @@ app.get('/league/:leagueId', async (req, res) => {
   }
 });
 
+// routes
 app.get('/leagues/update', authRequired, async (req, res) => {
   try {
     const user = await User.findById(req.session.user._id).populate('team');
@@ -782,18 +726,40 @@ app.post('/leagues/update', authRequired, async (req, res) => {
     const userTeam = match.team1._id.equals(req.session.user.team) ? match.team1 : match.team2;
     const opponent = match.team1._id.equals(req.session.user.team) ? match.team2 : match.team1;
 
-    // Find the league specified by the user
-    const league = await League.findById(leagueId);
+    if (leagueId === 'friendly') {
+      // Update the match score for a friendly match
+      match.team1Goals = userTeamGoals;
+      match.team2Goals = opponentGoals;
+      await match.save();
+    } else {
+      // Find the league specified by the user
+      const league = await League.findById(leagueId);
 
-    // Update the league standings based on the results
-    if (league) {
-      await updateStandings(league, userTeam, opponent, userTeamGoals, opponentGoals);
+      if (league.teams.includes(userTeam._id) && league.teams.includes(opponent._id)) {
+        // Update the league standings based on the results
+        await updateStandings(league, userTeam, opponent, userTeamGoals, opponentGoals);
+
+        // Update the match score
+        match.team1Goals = userTeamGoals;
+        match.team2Goals = opponentGoals;
+        await match.save();
+      } else {
+        // Render the page with an error message if one or both teams are not in the selected league
+        const matches = await Match.find({
+          $or: [
+            { team1: userTeam._id, team1Goals: { $exists: false } },
+            { team2: userTeam._id, team2Goals: { $exists: false } }
+          ]
+        })
+          .populate('team1')
+          .populate('team2')
+          .populate('pitch');
+
+        const leagues = await League.find({ teams: userTeam._id }).populate('teams');
+        const errorMessage = "One or both of the teams have not joined this league";
+        return res.render('leagueUpdate', { team: userTeam, matches, leagues, errorMessage });
+      }
     }
-
-    // Update the match score
-    match.team1Goals = userTeamGoals;
-    match.team2Goals = opponentGoals;
-    await match.save();
 
     res.redirect(`/team/${userTeam._id}`);
   } catch (err) {
@@ -801,6 +767,7 @@ app.post('/leagues/update', authRequired, async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+
 
 
 app.listen(process.env.PORT || 3000);

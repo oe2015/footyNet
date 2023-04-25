@@ -1,3 +1,4 @@
+<!-- hbs -->
 <!DOCTYPE html>
 <html>
   <head>
@@ -16,6 +17,7 @@
           <input type="number" name="opponentGoals" required>
         <select id="leagueId" name="leagueId" required>
           <option value="" disabled selected>Choose a league</option>
+          <option value="friendly">Friendly Match</option>
           {{#each ../leagues}}
             <option value="{{this._id}}">{{this.name}}</option>
           {{/each}}
@@ -23,8 +25,12 @@
         <button type="submit">Update</button>
       </form>
     {{/each}}
+    {{#if errorMessage}}
+    <div class="error">{{errorMessage}}</div>
+    {{/if}}
   </body>
 </html>
+
 
 
 
