@@ -490,7 +490,7 @@ app.post('/match/:id/pitch', authRequired, async (req, res) => {
 
 app.post('/match/:id/updateMaxRange', authRequired, async (req, res) => {
   try {
-    const maxRange = req.body.maxRange;
+    const maxRange = sanitize(req.body.maxRange);
 
     const clientIpWithPort = req.headers['x-forwarded-for'];
 
@@ -538,7 +538,7 @@ app.post('/leagues/new', authRequired, async (req, res) => {
 
     // Create new league
     const newLeague = new League({
-      name: req.body.leagueName,
+      name: sanitize(req.body.leagueName),
       teams: [team._id],
       standings: [{
         team: team._id,
